@@ -3,12 +3,12 @@ import { Routes, Route, Navigate,useNavigate} from "react-router-dom";
 
 import Login from "./pages/Login";
 import ProtectedRoute from "./routes/ProtectedRoute";
-
+import Board from "./pages/Board";
 import { getCurrentUser } from "./services/authApi";
 import { refreshAccessToken } from "./services/refreshApi";
 
 import { useAuthStore } from "./store/authStore";
-// import { api } from "./services/api";
+
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -19,26 +19,7 @@ function Dashboard() {
     navigate("/login", { replace: true });
   };
 
-  // const simulateExpiredToken = () => {
-  //   useAuthStore
-  //     .getState()
-  //     .updateAccessToken("expired-invalid-token");
-
-  //   alert("Access token expired simulation set 🔐");
-  // };
-
-  // const testApi = async () => {
-  //   try {
-  //     const response = await api.get("/auth/me");
-
-  //     console.log("Success:", response.data);
-  //     alert("API Success ✅");
-  //   } catch (error) {
-  //     console.error(error);
-  //     alert("API Failed ❌");
-  //   }
-  // };
-
+  
   return (
     <div className="min-h-screen bg-slate-100 p-8">
       <div className="flex items-center justify-between">
@@ -54,28 +35,14 @@ function Dashboard() {
         </button>
       </div>
 
-      {/* <div className="mt-6 flex gap-4">
-        <button
-          onClick={simulateExpiredToken}
-          className="rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600"
-        >
-          Simulate Expired Token
-        </button>
-
-        <button
-          onClick={testApi}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-        >
-          Test API
-        </button>
-      </div> */}
+      
     </div>
   );
 }
 
-function Board() {
-  return <div className="p-6">Board</div>;
-}
+// function Board() {
+//   return <div className="p-6">Board</div>;
+// }
 
 function Analytics() {
   return <div className="p-6">Analytics</div>;
