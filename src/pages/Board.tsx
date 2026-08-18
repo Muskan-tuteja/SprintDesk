@@ -1,5 +1,7 @@
+
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
+import TaskDrawer from "../components/TaskDrawer";
 
 import {
   DndContext,
@@ -27,22 +29,10 @@ import { fetchTasks } from "../services/boardApi";
 import { useBoardStore } from "../store/boardStore";
 
 const columns = [
-  {
-    id: "todo" as const,
-    title: "To Do",
-  },
-  {
-    id: "in-progress" as const,
-    title: "In Progress",
-  },
-  {
-    id: "review" as const,
-    title: "Review",
-  },
-  {
-    id: "done" as const,
-    title: "Done",
-  },
+  { id: "todo" as const, title: "To Do" },
+  { id: "in-progress" as const, title: "In Progress" },
+  { id: "review" as const, title: "Review" },
+  { id: "done" as const, title: "Done" },
 ];
 
 type ColumnId = (typeof columns)[number]["id"];
@@ -66,11 +56,13 @@ function TaskCard({
   overlay = false,
   onEdit,
   onDelete,
+  onOpen,
 }: {
   task: Task;
   overlay?: boolean;
   onEdit?: (task: Task) => void;
   onDelete?: (id: number) => void;
+  onOpen?: (task: Task) => void;
 }) {
   const {
     attributes,
@@ -94,6 +86,11 @@ function TaskCard({
       style={overlay ? undefined : style}
       {...(!overlay ? listeners : {})}
       {...(!overlay ? attributes : {})}
+      onClick={() => {
+        if (!overlay && !isDragging) {
+          onOpen?.(task);
+        }
+      }}
       className={`rounded-xl bg-white p-4 shadow-sm ${
         overlay
           ? "rotate-2 cursor-grabbing shadow-xl"
@@ -179,12 +176,14 @@ function DroppableColumn({
   tasks,
   onEdit,
   onDelete,
+  onOpen,
 }: {
   id: ColumnId;
   title: string;
   tasks: Task[];
   onEdit: (task: Task) => void;
   onDelete: (id: number) => void;
+  onOpen: (task: Task) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `column-${id}`,
@@ -222,6 +221,7 @@ function DroppableColumn({
               task={task}
               onEdit={onEdit}
               onDelete={onDelete}
+              onOpen={onOpen}
             />
           ))}
         </div>
@@ -254,11 +254,13 @@ function TaskModal({
       task?.priority || "Medium"
     );
 
-  const [assignee, setAssignee] =
-    useState(task?.assignee || "");
+  const [assignee, setAssignee] = useState(
+    task?.assignee || ""
+  );
 
-  const [dueDate, setDueDate] =
-    useState(task?.dueDate || "");
+  const [dueDate, setDueDate] = useState(
+    task?.dueDate || ""
+  );
 
   const handleSubmit = (
     event: FormEvent<HTMLFormElement>
@@ -353,17 +355,11 @@ function TaskModal({
               }
               className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-blue-500"
             >
-              <option value="Low">
-                Low
-              </option>
-
+              <option value="Low">Low</option>
               <option value="Medium">
                 Medium
               </option>
-
-              <option value="High">
-                High
-              </option>
+              <option value="High">High</option>
             </select>
           </div>
 
@@ -461,6 +457,9 @@ function Board() {
   const [editingTask, setEditingTask] =
     useState<Task | null>(null);
 
+  const [selectedTask, setSelectedTask] =
+    useState<Task | null>(null);
+
   const [activeTaskId, setActiveTaskId] =
     useState<number | null>(null);
 
@@ -529,8 +528,6 @@ function Board() {
 
     const overId = String(over.id);
 
-    /* Drop on column */
-
     if (overId.startsWith("column-")) {
       const targetColumn =
         overId.replace(
@@ -542,23 +539,17 @@ function Board() {
         columns.some(
           (column) =>
             column.id === targetColumn
-        )
+        ) &&
+        activeTask.status !== targetColumn
       ) {
-        if (
-          activeTask.status !==
+        moveTask(
+          activeId,
           targetColumn
-        ) {
-          moveTask(
-            activeId,
-            targetColumn
-          );
-        }
+        );
       }
 
       return;
     }
-
-    /* Drop on task */
 
     const overTask = tasks.find(
       (task) =>
@@ -566,8 +557,6 @@ function Board() {
     );
 
     if (!overTask) return;
-
-    /* Same column */
 
     if (
       activeTask.status ===
@@ -581,8 +570,6 @@ function Board() {
 
       return;
     }
-
-    /* Different column */
 
     if (
       activeTask.status !==
@@ -614,6 +601,7 @@ function Board() {
   const handleEditTask = (
     task: Task
   ) => {
+    setSelectedTask(null);
     setEditingTask(task);
     setModalOpen(true);
   };
@@ -650,6 +638,22 @@ function Board() {
     if (!confirmed) return;
 
     deleteTask(id);
+
+    if (selectedTask?.id === id) {
+      setSelectedTask(null);
+    }
+  };
+
+  /* =========================
+     OPEN DRAWER
+  ========================= */
+
+  const handleOpenTask = (
+    task: Task
+  ) => {
+    if (activeTaskId !== null) return;
+
+    setSelectedTask(task);
   };
 
   const activeTask =
@@ -659,10 +663,6 @@ function Board() {
             task.id === activeTaskId
         )
       : null;
-
-  /* =========================
-     UI
-  ========================= */
 
   return (
     <main className="min-h-screen bg-slate-100 p-6">
@@ -680,6 +680,7 @@ function Board() {
         <button
           type="button"
           onClick={() => {
+            setSelectedTask(null);
             setEditingTask(null);
             setModalOpen(true);
           }}
@@ -711,6 +712,7 @@ function Board() {
                 tasks={columnTasks}
                 onEdit={handleEditTask}
                 onDelete={handleDeleteTask}
+                onOpen={handleOpenTask}
               />
             );
           })}
@@ -740,8 +742,16 @@ function Board() {
           }
         />
       )}
+
+      {selectedTask && (
+        <TaskDrawer
+          task={selectedTask}
+          onClose={() => setSelectedTask(null)}
+        />
+      )}
     </main>
   );
 }
 
 export default Board;
+
