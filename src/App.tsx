@@ -6,7 +6,7 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import Board from "./pages/Board";
 import { getCurrentUser } from "./services/authApi";
 import { refreshAccessToken } from "./services/refreshApi";
-
+import Analytics from "./pages/Analytics";
 import { useAuthStore } from "./store/authStore";
 
 
@@ -44,9 +44,9 @@ function Dashboard() {
 //   return <div className="p-6">Board</div>;
 // }
 
-function Analytics() {
-  return <div className="p-6">Analytics</div>;
-}
+// function Analytics() {
+//   return <div className="p-6">Analytics</div>;
+// }
 
 function App() {
   const setAuth = useAuthStore((state) => state.setAuth);

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import TaskDrawer from "../components/TaskDrawer";
-
+import Button from "../components/ui/Button";
 import {
   DndContext,
   DragOverlay,
@@ -677,17 +677,15 @@ function Board() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            setSelectedTask(null);
-            setEditingTask(null);
-            setModalOpen(true);
-          }}
-          className="rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-700"
-        >
-          + Add Task
-        </button>
+        <Button
+  type="button"
+  onClick={() => {
+    setEditingTask(null);
+    setModalOpen(true);
+  }}
+>
+  + Add Task
+</Button>
       </div>
 
       <DndContext
