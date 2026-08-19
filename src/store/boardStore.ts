@@ -27,200 +27,284 @@ interface BoardState {
   ) => void;
 }
 
-export const useBoardStore = create<BoardState>((set) => ({
-  tasks: [],
+const STORAGE_KEY = "sprint-board-tasks";
 
-  // =========================
-  // SET TASKS
-  // =========================
+const saveTasks = (tasks: BoardTask[]) => {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(tasks)
+    );
+  } catch (error) {
+    console.error(
+      "Failed to save tasks:",
+      error
+    );
+  }
+};
 
-  setTasks: (tasks) =>
-    set({
-      tasks,
-    }),
+const getSavedTasks = (): BoardTask[] => {
+  try {
+    const savedTasks =
+      localStorage.getItem(STORAGE_KEY);
 
-  // =========================
-  // ADD TASK
-  // =========================
+    if (!savedTasks) {
+      return [];
+    }
 
-  addTask: (task) =>
-    set((state) => ({
-      tasks: [...state.tasks, task],
-    })),
+    return JSON.parse(savedTasks);
+  } catch (error) {
+    console.error(
+      "Failed to load saved tasks:",
+      error
+    );
 
-  // =========================
-  // UPDATE TASK
-  // =========================
+    return [];
+  }
+};
 
-  updateTask: (id, updates) =>
-    set((state) => ({
-      tasks: state.tasks.map((task) =>
-        task.id === id
-          ? {
-              ...task,
-              ...updates,
-            }
-          : task
-      ),
-    })),
+export const useBoardStore = create<BoardState>(
+  (set) => ({
+    // Load tasks from localStorage when store starts
+    tasks: getSavedTasks(),
 
-  // =========================
-  // DELETE TASK
-  // =========================
+    // =========================
+    // SET TASKS
+    // =========================
 
-  deleteTask: (id) =>
-    set((state) => ({
-      tasks: state.tasks.filter(
-        (task) => task.id !== id
-      ),
-    })),
+    setTasks: (tasks) =>
+      set((state) => {
+        /*
+         * Important:
+         * API se tasks tabhi set honge
+         * jab localStorage empty ho.
+         */
+        const savedTasks = getSavedTasks();
 
-  // =========================
-  // MOVE TASK
-  // =========================
+        if (savedTasks.length > 0) {
+          return state;
+        }
 
-  moveTask: (taskId, status) =>
-    set((state) => {
-      const task = state.tasks.find(
-        (item) => item.id === taskId
-      );
+        saveTasks(tasks);
 
-      if (!task) {
-        return state;
-      }
+        return {
+          tasks,
+        };
+      }),
 
-      // Same column -> nothing to do
-      if (task.status === status) {
-        return state;
-      }
+    // =========================
+    // ADD TASK
+    // =========================
 
-      // Remove task from old column
-      const remainingTasks = state.tasks.filter(
-        (item) => item.id !== taskId
-      );
+    addTask: (task) =>
+      set((state) => {
+        const newTasks = [
+          ...state.tasks,
+          task,
+        ];
 
-      // Update task
-      const movedTask: BoardTask = {
-        ...task,
-        status,
-        completed: status === "done",
-      };
+        saveTasks(newTasks);
 
-      /*
-       * Find the last task of target column.
-       * We will put the moved task AFTER it.
-       */
-      let insertIndex = remainingTasks.length;
+        return {
+          tasks: newTasks,
+        };
+      }),
 
-      for (
-        let i = remainingTasks.length - 1;
-        i >= 0;
-        i--
-      ) {
-        if (
-          remainingTasks[i].status === status
+    // =========================
+    // UPDATE TASK
+    // =========================
+
+    updateTask: (id, updates) =>
+      set((state) => {
+        const newTasks = state.tasks.map(
+          (task) =>
+            task.id === id
+              ? {
+                  ...task,
+                  ...updates,
+                }
+              : task
+        );
+
+        saveTasks(newTasks);
+
+        return {
+          tasks: newTasks,
+        };
+      }),
+
+    // =========================
+    // DELETE TASK
+    // =========================
+
+    deleteTask: (id) =>
+      set((state) => {
+        const newTasks =
+          state.tasks.filter(
+            (task) => task.id !== id
+          );
+
+        saveTasks(newTasks);
+
+        return {
+          tasks: newTasks,
+        };
+      }),
+
+    // =========================
+    // MOVE TASK
+    // =========================
+
+    moveTask: (taskId, status) =>
+      set((state) => {
+        const task = state.tasks.find(
+          (item) => item.id === taskId
+        );
+
+        if (!task) {
+          return state;
+        }
+
+        if (task.status === status) {
+          return state;
+        }
+
+        const remainingTasks =
+          state.tasks.filter(
+            (item) => item.id !== taskId
+          );
+
+        const movedTask: BoardTask = {
+          ...task,
+          status,
+          completed:
+            status === "done",
+        };
+
+        let insertIndex =
+          remainingTasks.length;
+
+        for (
+          let i =
+            remainingTasks.length - 1;
+          i >= 0;
+          i--
         ) {
-          insertIndex = i + 1;
-          break;
-        }
-      }
-
-      // If target column has no task,
-      // put it at the end.
-      if (insertIndex > remainingTasks.length) {
-        insertIndex = remainingTasks.length;
-      }
-
-      const newTasks = [...remainingTasks];
-
-      newTasks.splice(
-        insertIndex,
-        0,
-        movedTask
-      );
-
-      return {
-        tasks: newTasks,
-      };
-    }),
-
-  // =========================
-  // REORDER SAME COLUMN
-  // =========================
-
-  reorderTasks: (activeId, overId) =>
-    set((state) => {
-      const activeTask = state.tasks.find(
-        (task) => task.id === activeId
-      );
-
-      const overTask = state.tasks.find(
-        (task) => task.id === overId
-      );
-
-      if (!activeTask || !overTask) {
-        return state;
-      }
-
-      // Reorder only inside same column
-      if (
-        activeTask.status !==
-        overTask.status
-      ) {
-        return state;
-      }
-
-      const columnTasks = state.tasks.filter(
-        (task) =>
-          task.status === activeTask.status
-      );
-
-      const oldIndex =
-        columnTasks.findIndex(
-          (task) => task.id === activeId
-        );
-
-      const newIndex =
-        columnTasks.findIndex(
-          (task) => task.id === overId
-        );
-
-      if (
-        oldIndex === -1 ||
-        newIndex === -1 ||
-        oldIndex === newIndex
-      ) {
-        return state;
-      }
-
-      // Reorder only this column
-      const reorderedColumn = arrayMove(
-        columnTasks,
-        oldIndex,
-        newIndex
-      );
-
-      let columnIndex = 0;
-
-      // Put reordered column tasks
-      // back into the complete task array
-      const newTasks = state.tasks.map(
-        (task) => {
           if (
-            task.status !==
-            activeTask.status
+            remainingTasks[i].status ===
+            status
           ) {
-            return task;
+            insertIndex = i + 1;
+            break;
           }
-
-          return reorderedColumn[
-            columnIndex++
-          ];
         }
-      );
 
-      return {
-        tasks: newTasks,
-      };
-    }),
-}));
+        const newTasks = [
+          ...remainingTasks,
+        ];
+
+        newTasks.splice(
+          insertIndex,
+          0,
+          movedTask
+        );
+
+        saveTasks(newTasks);
+
+        return {
+          tasks: newTasks,
+        };
+      }),
+
+    // =========================
+    // REORDER SAME COLUMN
+    // =========================
+
+    reorderTasks: (activeId, overId) =>
+      set((state) => {
+        const activeTask =
+          state.tasks.find(
+            (task) =>
+              task.id === activeId
+          );
+
+        const overTask =
+          state.tasks.find(
+            (task) =>
+              task.id === overId
+          );
+
+        if (
+          !activeTask ||
+          !overTask
+        ) {
+          return state;
+        }
+
+        if (
+          activeTask.status !==
+          overTask.status
+        ) {
+          return state;
+        }
+
+        const columnTasks =
+          state.tasks.filter(
+            (task) =>
+              task.status ===
+              activeTask.status
+          );
+
+        const oldIndex =
+          columnTasks.findIndex(
+            (task) =>
+              task.id === activeId
+          );
+
+        const newIndex =
+          columnTasks.findIndex(
+            (task) =>
+              task.id === overId
+          );
+
+        if (
+          oldIndex === -1 ||
+          newIndex === -1 ||
+          oldIndex === newIndex
+        ) {
+          return state;
+        }
+
+        const reorderedColumn =
+          arrayMove(
+            columnTasks,
+            oldIndex,
+            newIndex
+          );
+
+        let columnIndex = 0;
+
+        const newTasks =
+          state.tasks.map(
+            (task) => {
+              if (
+                task.status !==
+                activeTask.status
+              ) {
+                return task;
+              }
+
+              return reorderedColumn[
+                columnIndex++
+              ];
+            }
+          );
+
+        saveTasks(newTasks);
+
+        return {
+          tasks: newTasks,
+        };
+      }),
+  })
+);
