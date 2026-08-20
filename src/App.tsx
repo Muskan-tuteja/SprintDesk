@@ -8,7 +8,7 @@ import { getCurrentUser } from "./services/authApi";
 import { refreshAccessToken } from "./services/refreshApi";
 import Analytics from "./pages/Analytics";
 import { useAuthStore } from "./store/authStore";
-
+import NotificationCenter from "./components/NotificationCenter";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -26,7 +26,7 @@ function Dashboard() {
         <h1 className="text-3xl font-bold">
           SprintDesk Dashboard
         </h1>
-
+  <NotificationCenter />
         <button
           onClick={handleLogout}
           className="rounded-lg bg-red-600 px-5 py-2.5 font-semibold text-white hover:bg-red-700"
