@@ -1,8 +1,10 @@
-
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import TaskDrawer from "../components/TaskDrawer";
 import Button from "../components/ui/Button";
+import Input from "../components/ui/Input";
+import Select from "../components/ui/Select";
+import Modal from "../components/ui/Modal";
 import {
   DndContext,
   DragOverlay,
@@ -245,26 +247,13 @@ function TaskModal({
 }) {
   const isEditing = Boolean(task);
 
-  const [title, setTitle] = useState(
-    task?.title || ""
-  );
-
+  const [title, setTitle] = useState(task?.title || "");
   const [priority, setPriority] =
-    useState<Task["priority"]>(
-      task?.priority || "Medium"
-    );
+    useState<Task["priority"]>(task?.priority || "Medium");
+  const [assignee, setAssignee] = useState(task?.assignee || "");
+  const [dueDate, setDueDate] = useState(task?.dueDate || "");
 
-  const [assignee, setAssignee] = useState(
-    task?.assignee || ""
-  );
-
-  const [dueDate, setDueDate] = useState(
-    task?.dueDate || ""
-  );
-
-  const handleSubmit = (
-    event: FormEvent<HTMLFormElement>
-  ) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!title.trim()) return;
@@ -275,8 +264,7 @@ function TaskModal({
       completed: task?.completed || false,
       status: task?.status || "todo",
       priority,
-      assignee:
-        assignee.trim() || "Unassigned",
+      assignee: assignee.trim() || "Unassigned",
       dueDate,
     };
 
@@ -284,137 +272,66 @@ function TaskModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={onClose}
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title={isEditing ? "Edit Task" : "Add Task"}
+      maxWidth="max-w-md"
     >
-      <div
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
-        onClick={(event) =>
-          event.stopPropagation()
-        }
-      >
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">
-              {isEditing
-                ? "Edit Task"
-                : "Add Task"}
-            </h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          label="Task Title"
+          type="text"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          placeholder="Enter task title"
+          autoFocus
+          required
+        />
 
-            <p className="mt-1 text-sm text-slate-500">
-              {isEditing
-                ? "Update task details"
-                : "Create a new task"}
-            </p>
-          </div>
+        <Select
+          label="Priority"
+          value={priority}
+          onChange={(event) =>
+            setPriority(event.target.value as Task["priority"])
+          }
+          options={[
+            { value: "Low", label: "Low" },
+            { value: "Medium", label: "Medium" },
+            { value: "High", label: "High" },
+          ]}
+        />
 
-          <button
+        <Input
+          label="Assignee"
+          type="text"
+          value={assignee}
+          onChange={(event) => setAssignee(event.target.value)}
+          placeholder="Enter assignee"
+        />
+
+        <Input
+          label="Due Date"
+          type="date"
+          value={dueDate}
+          onChange={(event) => setDueDate(event.target.value)}
+        />
+
+        <div className="flex justify-end gap-3 pt-3">
+          <Button
             type="button"
+            variant="secondary"
             onClick={onClose}
-            className="rounded-lg px-3 py-1 text-2xl text-slate-500 hover:bg-slate-100"
           >
-            ×
-          </button>
+            Cancel
+          </Button>
+
+          <Button type="submit">
+            {isEditing ? "Save Changes" : "Add Task"}
+          </Button>
         </div>
-
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4"
-        >
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
-              Task Title
-            </label>
-
-            <input
-              type="text"
-              value={title}
-              onChange={(event) =>
-                setTitle(event.target.value)
-              }
-              placeholder="Enter task title"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-blue-500"
-              autoFocus
-              required
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
-              Priority
-            </label>
-
-            <select
-              value={priority}
-              onChange={(event) =>
-                setPriority(
-                  event.target
-                    .value as Task["priority"]
-                )
-              }
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-blue-500"
-            >
-              <option value="Low">Low</option>
-              <option value="Medium">
-                Medium
-              </option>
-              <option value="High">High</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
-              Assignee
-            </label>
-
-            <input
-              type="text"
-              value={assignee}
-              onChange={(event) =>
-                setAssignee(event.target.value)
-              }
-              placeholder="Enter assignee"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
-              Due Date
-            </label>
-
-            <input
-              type="date"
-              value={dueDate}
-              onChange={(event) =>
-                setDueDate(event.target.value)
-              }
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-blue-500"
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-slate-300 px-4 py-2.5 font-medium text-slate-700 hover:bg-slate-50"
-            >
-              Cancel
-            </button>
-
-            <button
-              type="submit"
-              className="rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-700"
-            >
-              {isEditing
-                ? "Save Changes"
-                : "Add Task"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </Modal>
   );
 }
 
@@ -752,4 +669,3 @@ function Board() {
 }
 
 export default Board;
-
