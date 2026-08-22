@@ -1,4 +1,3 @@
-
 import {
   lazy,
   Suspense,
@@ -10,6 +9,7 @@ import {
   Route,
   Navigate,
   useNavigate,
+  Link,
 } from "react-router-dom";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
@@ -49,25 +49,76 @@ function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 p-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">
-          SprintDesk Dashboard
-        </h1>
+    <main className="min-h-screen bg-slate-100 p-8">
+      <div className="mx-auto max-w-6xl">
 
-        <div className="flex items-center gap-4">
-          <NotificationCenter />
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">
+              SprintDesk Dashboard
+            </h1>
 
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="rounded-lg bg-red-600 px-5 py-2.5 font-semibold text-white hover:bg-red-700"
+            <p className="mt-2 text-slate-600">
+              Manage your sprint tasks, board and analytics.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <NotificationCenter />
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-lg bg-red-600 px-5 py-2.5 font-semibold text-white hover:bg-red-700"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+
+        {/* Navigation Cards */}
+        <div className="mt-8 grid gap-6 md:grid-cols-2">
+
+          {/* Board */}
+          <Link
+            to="/board"
+            className="rounded-xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            Logout
-          </button>
+            <h2 className="text-xl font-semibold">
+              Sprint Board
+            </h2>
+
+            <p className="mt-2 text-slate-600">
+              Manage and track your sprint tasks.
+            </p>
+
+            <span className="mt-4 inline-block font-semibold text-blue-600">
+              Open Board →
+            </span>
+          </Link>
+
+          {/* Analytics */}
+          <Link
+            to="/analytics"
+            className="rounded-xl bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <h2 className="text-xl font-semibold">
+              Analytics
+            </h2>
+
+            <p className="mt-2 text-slate-600">
+              View sprint progress and task analytics.
+            </p>
+
+            <span className="mt-4 inline-block font-semibold text-blue-600">
+              View Analytics →
+            </span>
+          </Link>
+
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -79,11 +130,13 @@ function PageLoader() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-100">
       <div className="text-center">
+
         <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-slate-300 border-t-blue-600" />
 
         <p className="text-slate-600">
           Loading page...
         </p>
+
       </div>
     </div>
   );
@@ -121,27 +174,22 @@ function App() {
       }
 
       try {
-        // 1. Refresh token se new access token
         const tokenData =
           await refreshAccessToken(refreshToken);
 
-        // 2. New access token store karo
         useAuthStore
           .getState()
           .updateAccessToken(
             tokenData.accessToken
           );
 
-        // 3. New refresh token save karo
         localStorage.setItem(
           "refreshToken",
           tokenData.refreshToken
         );
 
-        // 4. Current user fetch karo
         const user = await getCurrentUser();
 
-        // 5. Authentication complete
         setAuth(
           tokenData.accessToken,
           user
@@ -178,15 +226,14 @@ function App() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
-        {/* Public route */}
 
+        {/* Public route */}
         <Route
           path="/login"
           element={<Login />}
         />
 
         {/* Protected routes */}
-
         <Route
           element={<ProtectedRoute />}
         >
@@ -207,7 +254,6 @@ function App() {
         </Route>
 
         {/* Unknown route */}
-
         <Route
           path="*"
           element={
@@ -217,10 +263,10 @@ function App() {
             />
           }
         />
+
       </Routes>
     </Suspense>
   );
 }
 
 export default App;
-
